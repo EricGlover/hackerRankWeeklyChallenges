@@ -27,7 +27,8 @@ m = m.to_i                              #number of edges
 mist_set = []         #store final a b's here???? NO KEEP A RUNNING TOTAL
 ##key_value = Array.new(n, [0.0, false]) #[ratio, in_mist_set?]
 ##couldn't I just write the code that checks key_value[i][1] to check for i in mist_set????
-key_value = Array.new(n) {[0.0, false]} #I'm getting re-used objects in the above line of code
+#####[ratio, in_mist_set?, vertex_indicating_best_edge]
+key_value = Array.new(n) {[0.0, false, -1]} #I'm getting re-used objects in the above line of code
 key_value[0][0] = 1001.0       ##figure out a better way to start with 0th index  ##is this necessary??
 #adjacent = Array.new(n)
 #adjacent.size.times do |i|                #adjacent is now an n x n size 3-d array
@@ -83,6 +84,7 @@ n.times do |i|
     n.times do |j|
       if adjacent[i][j][0] != -1.0 && adjacent[i][j][0] > max_edge
         max_edge = adjacent[i][j][0]
+        key_value[i][2] = j
       end
     end
     key_value[i][0] = max_edge
@@ -123,15 +125,22 @@ while mist_set.size < n
   mist_set << maximum_key_index
   ##B.1 add up the totals (the edge we just added is mist_set[end - 1] < - > maximum_key_index)
     #I used the other vertex that connects to the edge the one at mist_set[end - 2]..for some reason
-      #this may be an error
-  total_a += adjacent[maximum_key_index][mist_set.size - 2][1]
-  total_b += adjacent[maximum_key_index][mist_set.size - 2][2]
+      #this may be an error, this is an error
+        #I'm falsely assumed that the the vertex that maximum_key_index connects to is the last vertex we added to MST
+  ##key_value[maximum_key_index][2] should = the other vertex of the maximum edge
+  total_a += adjacent[maximum_key_index][key_value[maximum_key_index][2]][1]
+  total_b += adjacent[maximum_key_index][key_value[maximum_key_index][2]][2]
+
+  #total_a += adjacent[maximum_key_index][mist_set.size - 2][1]
+  #total_b += adjacent[maximum_key_index][mist_set.size - 2][2]
 
   #i don't believe it's necessary to update adjacent here to remove the edges ###?????
   key_value[maximum_key_index][1] = true
 
 
   #C. find adjacent vertexes (we'll use an adjacency matrix for this)
+  #we've just add maximum_key_index to mist_set, now we need to find that vertex's adjacent vertexes
+    #for each adjacent vertex we find the maximum edge for it and set it's key_value to that
   n.times do |i|
     if adjacent[maximum_key_index][i][0] != -1.0 && key_value[i][1] == false
       # for adjacent vertex p set key[p] = MAX value of all edges p - w
@@ -139,10 +148,10 @@ while mist_set.size < n
       n.times do |j|
         if adjacent[i][j][0] != -1.0 && adjacent[i][j][0] > max_edge
           max_edge = adjacent[i][j][0]
+          key_value[i][2] = j
         end
       end
       key_value[i][0] = max_edge
-      #testing blah
     end
   end
 
