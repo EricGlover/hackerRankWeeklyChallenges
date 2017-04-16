@@ -24,22 +24,11 @@ require 'pry'
 n,m = gets.strip.split(' ')
 n = n.to_i                              #number of vertices
 m = m.to_i                              #number of edges
-mist_set = []         #store final a b's here???? NO KEEP A RUNNING TOTAL
-##key_value = Array.new(n, [0.0, false]) #[ratio, in_mist_set?]
-##couldn't I just write the code that checks key_value[i][1] to check for i in mist_set????
+mist_set = []
 #####[ratio, in_mist_set?, vertex_indicating_best_edge]
 key_value = Array.new(n) {[0.0, false, -1]} #I'm getting re-used objects in the above line of code
-key_value[0][0] = 1001.0       ##figure out a better way to start with 0th index  ##is this necessary??
-#adjacent = Array.new(n)
-#adjacent.size.times do |i|                #adjacent is now an n x n size 3-d array
-  #adjacent[i] = Array.new(n, [0.0, 0, 0])     #(the 3rd dimension being composed of (nil == no edge, [ratio, a, b] = maximum a/b edge))
-  #adjacent[i] = Array.new(n, [-1.0, 0, 0]) #a and b are constrained to be positive so store ratio as negative to indicate nil
-#  n.times do |i|
-#    adjacent[i] = [-1.0, 0, 0]
-#  end
-#end
+#key_value[0][0] = 1001.0       ##figure out a better way to start with 0th index  ##is this necessary??
 adjacent = Array.new(n) { Array.new(n) { [-1.0, 0, 0] } }
-#adjacent = Array.new(n, Array.new(n, [0.0, 0, 0]))
 total_a = 0
 total_b = 0
 
@@ -62,12 +51,35 @@ for a0 in (0..m-1)
       adjacent[v][u][0] = ratio
       adjacent[v][u][1] = a.to_i
       adjacent[v][u][2] = b.to_i
+    elsif ratio == adjacent[u][v][0]
+      #on resolving equivalent ratios,
+        #if the ratio is > 1 then use the vertex with the largest value a
+        #if the ratio is < 1 then use the vertex with the smallest value b
+      if ratio > 1.0
+        next if adjacent[u][v][1] > a.to_i
+        adjacent[u][v][0] = ratio
+        adjacent[u][v][1] = a.to_i
+        adjacent[u][v][2] = b.to_i
+        #store on both sides
+        adjacent[v][u][0] = ratio
+        adjacent[v][u][1] = a.to_i
+        adjacent[v][u][2] = b.to_i
+      elsif ratio < 1.0
+        next if adjacent[u][v][2] < b.to_i
+        adjacent[u][v][0] = ratio
+        adjacent[u][v][1] = a.to_i
+        adjacent[u][v][2] = b.to_i
+        #store on both sides
+        adjacent[v][u][0] = ratio
+        adjacent[v][u][1] = a.to_i
+        adjacent[v][u][2] = b.to_i
+      else
+        #if ratio == 1.0...run and hide, idk man
+      end
     else
-        #if not the best edge then ignore it
-    end
-    #adjacent[u][v] += 1
-    #adjacent[v][u] += 1
+      #if it's not the best edge ignore it
 
+    end
 end
 
 binding.pry
@@ -80,14 +92,15 @@ n.times do |i|
   if adjacent[0][i][0] != -1.0
     # for adjacent vertex p set key[p] = MAX value of all edges
     #search adjacent[i][] for max values
-    max_edge = -0.9
-    n.times do |j|
-      if adjacent[i][j][0] != -1.0 && adjacent[i][j][0] > max_edge
-        max_edge = adjacent[i][j][0]
-        key_value[i][2] = j
-      end
-    end
-    key_value[i][0] = max_edge
+    #max_edge = -0.9
+    #n.times do |j|
+    #  if adjacent[i][j][0] != -1.0 && adjacent[i][j][0] > max_edge
+    #    max_edge = adjacent[i][j][0]
+    #    key_value[i][2] = j
+    #  end
+    #end
+    key_value[i][0] = adjacent[0][i][0]   #this only works for the initial prep work b/c there's only one vertex
+    key_value[i][2] = 0
     #key_value[i][1] = true ###???????    #I believe this is an error
   end
 end
@@ -98,6 +111,8 @@ while mist_set.size < n
   binding.pry
   maximum_key = 0.0
   maximum_key_index = 0
+  #TODO fix the inital settings of max key and index to be the first key_value[i][1] == false
+    #then start the below loop from i+1 and go to key_value.size - 1
   key_value.size.times do |i|
     if key_value[i][0] > maximum_key && key_value[i][1] == false
       maximum_key = key_value[i][0]
@@ -141,17 +156,34 @@ while mist_set.size < n
   #C. find adjacent vertexes (we'll use an adjacency matrix for this)
   #we've just add maximum_key_index to mist_set, now we need to find that vertex's adjacent vertexes
     #for each adjacent vertex we find the maximum edge for it and set it's key_value to that
+
+  #here in prim's we look change the key_value for the newly adjacent vertexes
+  #we just added maximum_key_index to mist_set,
   n.times do |i|
+    #if (there is an edge here) && (this vertex isn't already in mist_set)
     if adjacent[maximum_key_index][i][0] != -1.0 && key_value[i][1] == false
       # for adjacent vertex p set key[p] = MAX value of all edges p - w
-      max_edge = -0.9
-      n.times do |j|
-        if adjacent[i][j][0] != -1.0 && adjacent[i][j][0] > max_edge
-          max_edge = adjacent[i][j][0]
-          key_value[i][2] = j
-        end
+      #max_edge = -0.9
+      #n.times do |j|
+      #  if adjacent[i][j][0] != -1.0 && adjacent[i][j][0] > max_edge
+      #    max_edge = adjacent[i][j][0]
+      #    key_value[i][2] = j
+      #  end
+      #end
+      if key_value[i][0] < adjacent[maximum_key_index][i][0]
+        key_value[i][0] = adjacent[maximum_key_index][i][0]
+        key_value[i][2] = maximum_key_index
+      elsif key_value[i][0] < adjacent[maximum_key_index][i][0]
+        #on resolving equivalent ratios,
+          #if the ratio is > 1 then use the vertex with the largest value a
+          #if the ratio is < 1 then use the vertex with the smallest value b
+            #is this needed here?? write it later...
+            puts "DANK PROBLEMS AHOY"
+
+      else
+
       end
-      key_value[i][0] = max_edge
+      #key_value[i][0] = max_edge
     end
   end
 
