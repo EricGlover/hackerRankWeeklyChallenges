@@ -19,6 +19,26 @@
 #considerations :
   #maybe use the adjaceny matrix to store the weights (nil == no edge, [ratio, a, b] = maximum a/b edge)
 
+#problems : eeee gahd man
+#3 3
+#0 1 34 99
+#1 2 1 3
+#0 2 1 2
+#one solution is to simply check that it makes a better ratio each time when choosing a maximum_key_value
+  #this unfortunately doesn't adequately solve cases where I've already prescreened out better answers
+  #I believe there's another problem too....
+  #oh yeah.
+#102 102
+#0 2 34 99
+#1 2 1 3
+#0 2 1 2
+#0 5 1 2
+#5 6 1 2
+#..
+#101 102 1 2
+#if you were to add the giant line of .5 ratio's first then get down to the previous decision between 0-2 and 1-2
+  #choosing 0-2 is correct in this instance
+
 require 'pry'
 
 n,m = gets.strip.split(' ')
@@ -114,40 +134,27 @@ while mist_set.size < n
   #TODO fix the inital settings of max key and index to be the first key_value[i][1] == false
     #then start the below loop from i+1 and go to key_value.size - 1
   key_value.size.times do |i|
-    if key_value[i][0] > maximum_key && key_value[i][1] == false
-      maximum_key = key_value[i][0]
-      maximum_key_index = i
-    elsif key_value[i][0] == maximum_key && key_value[i][1] == false
-      #on resolving equivalent ratios,
-        #if the ratio is > 1 then use the vertex with the largest value a
-        #if the ratio is < 1 then use the vertex with the smallest value b
-          ##TODO FIX THE PREFILTERING EARLY WITH THIS UPDATE
-      if (maximum_key > 1.0)
-        next if adjacent[maximum_key_index][mist_set.size-1][1] > adjacent[i][mist_set.size-1][1]
-        maximum_key = key_value[i][0]
+    if key_value[i][1] == false
+      new_total_a = total_a.dup + adjacent[i][ key_value[i][2] ][1]
+      new_total_b = total_b.dup + adjacent[i][ key_value[i][2] ][2]
+      new_ratio = new_total_a.to_f / new_total_b.to_f
+      if new_ratio > maximum_key
+        maximum_key = new_ratio
         maximum_key_index = i
-      elsif maximum_key < 1.0
-        next if adjacent[maximum_key_index][mist_set.size-1][2] < adjacent[i][mist_set.size-1][2]
-        maximum_key = key_value[i][0]
-        maximum_key_index = i
-      else
-        #hope this never happens
       end
     end
   end
 
+
+
+
+
   #B. put vertex into mist_set
   mist_set << maximum_key_index
   ##B.1 add up the totals (the edge we just added is mist_set[end - 1] < - > maximum_key_index)
-    #I used the other vertex that connects to the edge the one at mist_set[end - 2]..for some reason
-      #this may be an error, this is an error
-        #I'm falsely assumed that the the vertex that maximum_key_index connects to is the last vertex we added to MST
   ##key_value[maximum_key_index][2] should = the other vertex of the maximum edge
   total_a += adjacent[maximum_key_index][key_value[maximum_key_index][2]][1]
   total_b += adjacent[maximum_key_index][key_value[maximum_key_index][2]][2]
-
-  #total_a += adjacent[maximum_key_index][mist_set.size - 2][1]
-  #total_b += adjacent[maximum_key_index][mist_set.size - 2][2]
 
   #i don't believe it's necessary to update adjacent here to remove the edges ###?????
   key_value[maximum_key_index][1] = true
@@ -162,14 +169,7 @@ while mist_set.size < n
   n.times do |i|
     #if (there is an edge here) && (this vertex isn't already in mist_set)
     if adjacent[maximum_key_index][i][0] != -1.0 && key_value[i][1] == false
-      # for adjacent vertex p set key[p] = MAX value of all edges p - w
-      #max_edge = -0.9
-      #n.times do |j|
-      #  if adjacent[i][j][0] != -1.0 && adjacent[i][j][0] > max_edge
-      #    max_edge = adjacent[i][j][0]
-      #    key_value[i][2] = j
-      #  end
-      #end
+
       if key_value[i][0] < adjacent[maximum_key_index][i][0]
         key_value[i][0] = adjacent[maximum_key_index][i][0]
         key_value[i][2] = maximum_key_index
@@ -177,8 +177,7 @@ while mist_set.size < n
         #on resolving equivalent ratios,
           #if the ratio is > 1 then use the vertex with the largest value a
           #if the ratio is < 1 then use the vertex with the smallest value b
-            #is this needed here?? write it later...
-            puts "DANK PROBLEMS AHOY"
+
 
       else
 
